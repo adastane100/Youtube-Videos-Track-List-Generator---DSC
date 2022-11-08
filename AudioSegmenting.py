@@ -4,7 +4,7 @@ from pydub import AudioSegment
 
 
 def SegmentAudio():
-    song = AudioSegment.from_mp3("abcde.mp3")
+    song = AudioSegment.from_file("nora-en-pure.mp4", "mp4")
     # pydub does things in milliseconds
     ten_seconds = 10 * 1000
 

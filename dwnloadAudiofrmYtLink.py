@@ -4,8 +4,8 @@ from pytube import YouTube
 import os
 
 def dwnloadAudiofrmYtLink():
-    yt = YouTube(str(input("Enter URL of youtube video: \n ")))
-    #yt = YouTube('https://www.youtube.com/watch?v=8CifN2yqdg4')
+    #yt = YouTube(str(input("Enter URL of youtube video: \n ")))
+    yt = YouTube('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
     video = yt.streams.filter(only_audio=True).first()
     print("Enter the destination address (leave blank to save in current directory)")
     destination = str(input(" ")) or '.'
