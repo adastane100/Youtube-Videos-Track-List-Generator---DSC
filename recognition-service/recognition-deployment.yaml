@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recognition-worker
+spec:
+  selector:
+    matchLabels:
+      app: recognition-worker
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: recognition-worker
+    spec:
+      containers:
+      - name: recognition-worker
+        image: kaidrumm/recognition-worker:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 4Gi
+        env:
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: MINIO_HOST
+          value: "minio:9000"
+        ports:
+        - containerPort: 5002
