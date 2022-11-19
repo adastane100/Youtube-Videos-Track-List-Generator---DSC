@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{% block title %} Generate Tracklist for Video {% endblock %}</h1>
+<form method="post">
+    <label for="url">Youtube Video URL</label>
+    <br>
+    <input type="text" name="url"
+           placeholder="input address"
+           value="{{ request.form['url'] }}"></input>
+    <br>
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}
