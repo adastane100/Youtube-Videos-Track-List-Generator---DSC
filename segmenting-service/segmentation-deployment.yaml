@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: segmentation-worker
-        image: kaidrumm/segmentation-worker:latest
+        image: kaidrumm/segmentation:latest
         imagePullPolicy: Always
         resources:
           requests:
@@ -28,4 +28,4 @@ spec:
         - name: MINIO_HOST
           value: "minio:9000"
         ports:
-        - containerPort: 5002
+        - containerPort: 5003

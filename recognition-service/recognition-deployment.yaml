@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: recognition-worker
-        image: kaidrumm/recognition-worker:latest
+        image: kaidrumm/recognition:latest
         imagePullPolicy: Always
         resources:
           requests:

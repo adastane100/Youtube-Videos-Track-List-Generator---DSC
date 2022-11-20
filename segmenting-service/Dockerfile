@@ -1,9 +1,10 @@
 FROM python:3.8
 
-COPY segmentation-service /srv
+COPY segmentation.py /srv
+COPY requirements.txt /srv
 
 RUN /usr/local/bin/python -m pip install --upgrade pip
-RUN python -m pip install -r /app/requirements.txt
+RUN python -m pip install -r /srv/requirements.txt
 
 WORKDIR /srv
 

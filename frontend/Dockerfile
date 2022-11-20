@@ -11,4 +11,4 @@ ENV PYTHONPATH /app
 EXPOSE 5000
 WORKDIR /
 
-CMD	FLASK_APP=app flask run -h 0.0.0.0
+CMD	FLASK_APP=frontend flask run -h 0.0.0.0

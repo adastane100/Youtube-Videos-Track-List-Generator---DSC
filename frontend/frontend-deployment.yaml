@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: kaidrumm/frontend:v1
+        image: kaidrumm/frontend:latest
+        imagePullPolicy: Always
         resources:
           requests:
             cpu: 100m

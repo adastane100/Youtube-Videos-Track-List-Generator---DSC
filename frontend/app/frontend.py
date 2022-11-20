@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 ##
-## Flask REST server for music waveform analysis
+## Flask REST server for tracklist generator homepage
 ##
 
 from flask import Flask, render_template, request
