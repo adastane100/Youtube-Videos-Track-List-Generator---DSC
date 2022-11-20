@@ -46,10 +46,17 @@ shazam = Shazam()
 # asyncio.run(main())
 
 async def recognize(song):
-    out = await shazam.recognize_song("rickroll.mp4")
+    out = await shazam.recognize_song(song)
+    serialized = Serialize.full_track(out)
+    print(serialized)
+    print('--------------------------')
+    song_info = {}
+    song_info['title'] = serialized.track.title
+    song_info['Track ID'] = serialized.track.key
 
 def check_for_data():
-    minioClient.fget_object('queue', f"{hash}.mp3", f"/data/input/{hash}.mp3")
+    job = redisClient.blpop("to-recognize", timeout=0)
+    return job
 
 if __name__ == "__main__":
     while(1):
