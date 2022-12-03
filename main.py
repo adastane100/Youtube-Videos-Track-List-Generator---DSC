@@ -44,7 +44,8 @@ def generate_tracks():
         return render_template(
             'index.html',
             url=input_val,
-            tracks=identified_tracks[0],
+            tracks=identified_tracks,
+            len=len(identified_tracks),
             result_success=True
         )
     else:

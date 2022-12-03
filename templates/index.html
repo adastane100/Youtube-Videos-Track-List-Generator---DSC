@@ -37,11 +37,28 @@
 			    <div class="col-md-8">
                 {% if result_success == True %}
                 <br/>
-                <p>The Tracklist genarated from URL {{url}} are : 
-					<br/>
-					<b>TITLE :: {{tracks['title']}}</b> 
-					<br/>
-					<b>SUB TITLE :: {{tracks['Sub title']}}</b>
+                <p>The Tracklist genarated from URL <b>{{url}}</b> are : 
+					
+					<table style="margin: auto;">
+						<!-- Table headers -->
+							<th>
+								<tr style="color: green; ">    
+								<td>Nos.</td>
+								<td>Title</td>
+								<td>Sub Title</td>
+						</tr>
+							</th>	  
+						{%for i in range(0, len)%}
+						<tr>
+							<td>{{i+1}}</td>
+							<td>{{tracks[i]['title']}}</td>
+							<td>{{tracks[i]['Sub title']}}</td> 
+						{%endfor%}  
+						</tr> 
+						</table>
+
+
+
 				</p>
                 {% endif %}
                 {% if result_success == False %}
