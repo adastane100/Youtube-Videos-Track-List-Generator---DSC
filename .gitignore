@@ -1,1 +1,4 @@
 project-venv/*
+segmentedTracks/*
+mp4Files/*
+__pycache__/*
