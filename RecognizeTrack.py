@@ -1,8 +1,30 @@
 # pip install Shazamio ShazamAPI flask pydub pathlib pytube ffmpeg
 from ShazamAPI import Shazam
+import asyncio
+from shazamio import Shazam, Serialize
+import RelatedTracks
+
 destination = './segmentedTracks/'
 
+shazam = Shazam()
 
+async def identify_track(video_title, track):
+    print('in recognize_song')
+    #print(track_name)
+    
+    out = await shazam.recognize_song(destination+video_title+'/'+track)
+    serialized = Serialize.full_track(out)
+    #print(serialized)
+    song_info = {}
+
+    if serialized is not None and serialized.track is not None:
+        song_info['title'] = serialized.track.title
+        song_info['Track ID'] = serialized.track.key
+        song_info['Sub title'] = serialized.track.subtitle
+    return song_info
+
+
+'''
 def identify_track(video_title, track):
     song_info = {}
     try:
@@ -19,3 +41,4 @@ def identify_track(video_title, track):
     except:
         song_info = {}
     return song_info
+'''

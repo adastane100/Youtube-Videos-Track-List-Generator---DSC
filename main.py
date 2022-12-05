@@ -8,7 +8,9 @@ from flask import Flask, render_template, request
 from ShazamAPI import Shazam
 import redis
 import json
-import DownloadFromYoutube ,AudioSegmenting, RecognizeTrack
+import asyncio
+
+import DownloadFromYoutube ,AudioSegmenting, RecognizeTrack, RelatedTracks
 
 #creating flask instance
 app = Flask(__name__) 
@@ -58,8 +60,10 @@ def generate_tracks():
             for track in segmented_tracks:
                 track_info = {}
                 # identify tracks from mp4 segment file
-                track_info = RecognizeTrack.identify_track(video_title[:-4],track)
+                #track_info = RecognizeTrack.identify_track(video_title[:-4],track)
+                track_info = asyncio.run(RecognizeTrack.identify_track(video_title[:-4],track))
                 if track_info is not None and len(track_info) > 0 and track_info['title'] not in all_track_titles:
+                    track_info['Related Tracks'] = asyncio.run(RelatedTracks.find_related_tracks(track_info['Track ID']))
                     all_track_titles.append(track_info['title'])
                     identified_tracks.append(track_info)
         

@@ -45,20 +45,32 @@
 								<tr style="color: green; ">    
 								<td>Nos.</td>
 								<td>Title</td>
-								<td>Sub Title</td>
+								<td>Artist</td>
+								<td>Related Tracks</td>
 						</tr>
 							</th>	  
 						{%for i in range(0, len)%}
 						<tr>
 							<td>{{i+1}}</td>
 							<td>{{tracks[i]['title']}}</td>
-							<td>{{tracks[i]['Sub title']}}</td> 
+							<td>{{tracks[i]['Sub title']}}</td>
+							
+							<td>{{tracks[i]['Related Tracks']}}</td>
+							<!--	
+							<td>
+								{%for related in tracks[i]['Related Tracks']%}
+									<tr>
+										<td></td>
+										<td>{{related['title']}}</td>
+										<td>{{related['Sub title']}}</td>
+									{%endfor%}  
+									</tr>
+							</td>
+							-->
+						
 						{%endfor%}  
 						</tr> 
 						</table>
-
-
-
 				</p>
                 {% endif %}
                 {% if result_success == False %}
