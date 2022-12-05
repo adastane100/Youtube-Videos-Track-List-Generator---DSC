@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 from ShazamAPI import Shazam
-import DownloadFromYoutube ,AudioSegmenting, RecognizeTrack
+import DownloadFromYoutube, AudioSegmenting, RecognizeTrack
 
 #creating flask instance
 app = Flask(__name__) 
