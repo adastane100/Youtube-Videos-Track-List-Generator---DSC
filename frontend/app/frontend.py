@@ -3,19 +3,43 @@
 ##
 ## Flask REST server for tracklist generator homepage
 ##
-
 from flask import Flask, render_template, request
 import json
+import os, sys
 from redis import Redis
+from minio import Minio
 from ShazamAPI import Shazam
 import DownloadFromYoutube, AudioSegmenting, RecognizeTrack
 
-
 # Initialize the Flask application
 app = Flask(__name__)
-r = Redis()
 app.logger.info("instance created")
 destination = './mp4Files/'
+
+# Redis
+redisHost = os.getenv("REDIS_HOST") or "localhost"
+redisPort = os.getenv("REDIS_PORT") or 6379
+redisClient = Redis(host=redisHost, port=redisPort, db=0)
+
+debugKey = "frontend"
+def log_debug(message, key=debugKey):
+    print("DEBUG:", message, file=sys.stdout)
+    redisClient.lpush('logging', f"{key}:{message}")
+def log_info(message, key=debugKey):
+    print("INFO:", message, file=sys.stdout)
+    redisClient.lpush('logging', f"{key}:{message}")
+
+# Minio
+minioHost = os.getenv("MINIO_HOST") or "localhost:9000"
+minioUser = os.getenv("MINIO_USER") or "rootuser"
+minioPasswd = os.getenv("MINIO_PASSWD") or "rootpass123"
+
+minioClient = Minio(minioHost,
+               secure=False,
+               access_key=minioUser,
+               secret_key=minioPasswd)
+log_info(f"Demucs worker connected to minio client {minioClient}")
+
 
 @app.route('/')
 def home():
