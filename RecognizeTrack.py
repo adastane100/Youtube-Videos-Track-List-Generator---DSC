@@ -1,3 +1,4 @@
+# pip install Shazamio ShazamAPI flask pydub pathlib pytube ffmpeg
 from ShazamAPI import Shazam
 destination = './segmentedTracks/'
 
