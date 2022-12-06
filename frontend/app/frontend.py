@@ -40,33 +40,36 @@ minioClient = Minio(minioHost,
                secret_key=minioPasswd)
 log_info(f"Demucs worker connected to minio client {minioClient}")
 
-
 @app.route('/')
 def home():
+    log_info(f"Home route")
     return render_template('index.html', result_success=False)
 
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
+    log_info(f"Healthcheck")
     return json.dumps({"Healthcheck": "Healthy"})
 
 
 @app.route('/track_list', methods=['POST'])
 def generate_tracks():
-    print('in main')
+    log_info(f"Track list endpoint")
+
     input_link = request.form.get("url_link")
     input_val = input_link.strip()
-    identified_tracks = []
-
     request_id = uuid.uuid4()
+    log_info(f"Request ID: {request_id}, Input: {input_val}")
     redisClient.lpush('to-downloader', f"{request_id}:{input_val}")
 
     # Wait for done message
     # TODO: Dynamically update page as results are found
     redisClient.blpop(f"{request_id}-done") # Wait until results are done
+    log_info(f"Request ID: {request_id} tracks are done")
     identified_tracks = redisClient.lmpop(request_id)[1] # Get results
         
     if identified_tracks is not None and len(identified_tracks) > 0:
+        log_info("Tracks found")
         return render_template(
             'index.html',
             url=input_val,
@@ -75,7 +78,8 @@ def generate_tracks():
             result_success=True
         )
     else:
-       return render_template(
+        log_info("No tracks found")
+        return render_template(
             'index.html',
             url=input_val,
             tracks='NO TRACKS FOUND',
