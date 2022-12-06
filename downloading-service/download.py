@@ -36,9 +36,11 @@ def log_info(message, key=infoKey):
 
 # Function
 def downloadAudio(url_link, request_id):
-    print('in downloadFromYoutube')
+    log_info('in downloadFromYoutube')
     yt = YouTube(url_link)
+    log_info(f'yt: {yt}')
     audioStream = yt.streams.filter(only_audio=True).first()
+    log_info(f'audioStream: {audioStream}')
     out_file = audioStream.download(output_path=destination)
     your_path = Path(out_file)
     '''
@@ -59,8 +61,9 @@ while True:
     try:
         job = redisClient.blpop("to-downloader", timeout = 0)
         log_info(f"Found job {job[1]}")
-        [request_id, url] = job[1].split(':', 1)
-        downloadAudio(url)
+        [request_id, url] = str(job[1]).split(':', 1)
+        log_info(f"Request ID: {request_id}, url: {url}")
+        downloadAudio(url, request_id)
     except Exception as exp:
         log_debug(f"Exception raised in receive-job loop: {str(exp)}")
     sys.stdout.flush()
