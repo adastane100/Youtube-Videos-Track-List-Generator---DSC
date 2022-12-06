@@ -1,4 +1,4 @@
-SUBDIRS = frontend recognition-service segmenting-service
+SUBDIRS = frontend downloading-service recognition-service segmenting-service 
 
 project:
 	for dir in $(SUBDIRS); do \
