@@ -1,4 +1,5 @@
 mode: standalone
+apiVersion: apps/v1
 
 ## Set default rootUser, rootPassword
 ## AccessKey and secretKey is generated when not set
@@ -30,5 +31,7 @@ resources:
 
 ##
 buckets:
-  - name: demucs-bucket
+  - name: mp4files
+    policy: public
+  - name: segmentedfiles
     policy: public
