@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 ## https://github.com/dotX12/ShazamIO
 
-import asyncio
-import os
-from shazamio import Shazam, Serialize
-
+import os, sys, platform
+from ShazamAPI import Shazam
 import redis
 from minio import Minio
 
@@ -23,42 +21,51 @@ minioClient = Minio(minioHost,
                access_key=minioUser,
                secret_key=minioPasswd)
 
-shazam = Shazam()
+# Logging
+infoKey = "{}.rest.info".format(platform.node())
+debugKey = "{}.rest.debug".format(platform.node())
+def log_debug(message, key=debugKey):
+    print("DEBUG:", message, file=sys.stdout)
+    redisClient.lpush('logging', f"{debugKey}:{message}")
 
-# async def main():
-#     shazam = Shazam()
-#     out = await shazam.recognize_song("rickroll.mp4")
-#     #print(out)
-#     serialized = Serialize.full_track(out)
-#     print(serialized)
-#     print('--------------------------')
-#     song_info = {}
-#     song_info['title'] = serialized.track.title
-#     song_info['Track ID'] = serialized.track.key
-#     #309528203
-#     song_info['Sub title'] = serialized.track.subtitle
-#     '''lyrics_sections = serialized.sections
-#     for section in lyrics_sections:
-#         if section['type'] == 'LYRICS':
-#             song_info['lyrics'] = section['text']'''
-#     print(song_info)
-    
-# asyncio.run(main())
+def log_info(message, key=infoKey):
+    print("INFO:", message, file=sys.stdout)
+    redisClient.lpush('logging', f"{infoKey}:{message}")
 
-async def recognize(song):
-    out = await shazam.recognize_song(song)
-    serialized = Serialize.full_track(out)
-    print(serialized)
-    print('--------------------------')
+def identify_track(request_id, segment_start, segment_end):
     song_info = {}
-    song_info['title'] = serialized.track.title
-    song_info['Track ID'] = serialized.track.key
 
-def check_for_data():
-    job = redisClient.blpop("to-recognize", timeout=0)
-    return job
+    # Open segment 
+    segmentAudio = minioClient.get_object(request_id, f"{segment_start}:{segment_end}")
 
-if __name__ == "__main__":
-    while(1):
-        next_sample = check_for_data()
-        asyncio.run(recognize(next_sample))
+    try:
+        #mp3_file_content_to_recognize = open(destination+video_title+'/'+track, 'rb').read()
+        shazam = Shazam(segmentAudio)
+        recognize_generator = shazam.recognizeSong()
+        while True:
+            one_record = next(recognize_generator)
+            break
+        
+        song_info['title'] = one_record[1]['track']['title']
+        song_info['Track ID'] = one_record[1]['track']['key']
+        song_info['Sub title'] = one_record[1]['track']['subtitle']
+    except:
+        song_info = {}
+    return song_info
+
+
+def recognizeSongs():
+    segment = redisClient.blpop("to-recognizer", timeout=0)
+    [request_id, segment_start, segment_end] = segment.split(":")
+    identify_track(request_id, segment_start, segment_end)
+
+# Watch for jobs
+while True:
+    try:
+        request_id = redisClient.blpop("to-recognizer", timeout = 0)
+        log_info(f"Found job {request_id}")
+        recognizeSongs(request_id)
+    except Exception as exp:
+        log_debug(f"Exception raised in receive-job loop: {str(exp)}")
+    sys.stdout.flush()
+    sys.stderr.flush()
