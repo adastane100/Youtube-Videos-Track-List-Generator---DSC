@@ -17,6 +17,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: apiv1
+            name: frontend
             port:
               number: 80

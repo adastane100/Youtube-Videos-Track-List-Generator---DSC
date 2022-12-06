@@ -16,7 +16,7 @@ app.logger.info("instance created")
 
 # Redis
 redisHost = os.getenv("REDIS_HOST") or "localhost"
-redisPort = os.getenv("REDIS_PORT") or 54605
+redisPort = os.getenv("REDIS_PORT") or 6379
 redisClient = Redis(host=redisHost, port=redisPort, db=0)
 
 # Logging
