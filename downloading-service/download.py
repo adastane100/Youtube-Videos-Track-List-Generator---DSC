@@ -58,8 +58,8 @@ def downloadAudio(url_link, request_id):
 while True:
     try:
         job = redisClient.blpop("to-downloader", timeout = 0)
-        log_info(f"Found job {job}")
-        [request_id, url] = job.split(':', 1)
+        log_info(f"Found job {job[1]}")
+        [request_id, url] = job[1].split(':', 1)
         downloadAudio(url)
     except Exception as exp:
         log_debug(f"Exception raised in receive-job loop: {str(exp)}")

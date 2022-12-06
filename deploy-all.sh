@@ -11,5 +11,7 @@ kubectl apply -f redis/redis-service.yaml
 
 kubectl apply -f minio/minio-external-service.yaml
 
+kubectl apply -f logs/logs-deployment.yaml
+
 # kubectl port-forward --namespace minio-ns svc/minio-proj 9001:9001
 # kubectl port-forward service/redis 6379:6379
