@@ -17,6 +17,9 @@ spec:
         image: kaidrumm/demucs-logs:latest
         imagePullPolicy: Always
         resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
           requests:
             cpu: 100m
             memory: 100Mi

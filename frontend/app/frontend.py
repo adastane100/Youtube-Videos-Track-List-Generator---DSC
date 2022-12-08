@@ -3,7 +3,7 @@
 ##
 ## Flask REST server for tracklist generator homepage
 ##
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request
 import json
 import os, sys, platform
 import uuid
@@ -58,7 +58,7 @@ def generate_tracks():
 
     input_link = request.form.get("url_link")
     input_val = input_link.strip()
-    request_id = uuid.uuid4()
+    request_id = str(uuid.uuid4().hex)
     log_info(f"Request ID: {request_id}, Input: {input_val}")
     redisClient.lpush('to-downloader', f"{request_id}:{input_val}")
 

@@ -8,4 +8,4 @@ RUN python -m pip install -r /srv/requirements.txt
 
 WORKDIR /srv
 
-CMD	["python3" "segmentation.py"]
+CMD	["python3", "segmentation.py"]

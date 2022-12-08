@@ -38,9 +38,8 @@ def log_info(message, key=infoKey):
 def downloadAudio(url_link, request_id):
     log_info('in downloadFromYoutube')
     yt = YouTube(url_link)
-    log_info(f'yt: {yt}')
-    audioStream = yt.streams.filter(only_audio=True).first()
-    log_info(f'audioStream: {audioStream}')
+    audioStream = yt.streams.filter(only_audio=True, file_extension='mp4').first()
+    log_info(f'All audioStreams: {yt.streams.filter(only_audio=True)}')
     out_file = audioStream.download(output_path=destination)
     your_path = Path(out_file)
     '''
@@ -49,19 +48,22 @@ def downloadAudio(url_link, request_id):
     os.rename(out_file, new_file)
     '''
     try:
-        minioClient.put_object("mp4files", request_id, audioStream, -1, 1, "application/octet-stream")
+        minioClient.fput_object("mp4files", request_id, your_path)
     except Exception as e:
         log_debug(f"Exception interacting with minio: {str(e)}")
 
     redisClient.lpush("to-segmenter", request_id)
     return your_path.name
 
+if not minioClient.bucket_exists("mp4files"):
+    minioClient.make_bucket("mp4files")
+
 # Watch for jobs
 while True:
     try:
-        job = redisClient.blpop("to-downloader", timeout = 0)
-        log_info(f"Found job {job[1]}")
-        [request_id, url] = str(job[1]).split(':', 1)
+        job = redisClient.blpop("to-downloader", timeout = 0)[1]
+        log_info(f"Found job {job}")
+        [request_id, url] = job.decode().split(':', 1)
         log_info(f"Request ID: {request_id}, url: {url}")
         downloadAudio(url, request_id)
     except Exception as exp:

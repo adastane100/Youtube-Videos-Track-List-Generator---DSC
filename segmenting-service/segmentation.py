@@ -1,8 +1,7 @@
 #pip install pytube ffmpeg pydub ShazamAPI shazamio playsound
 
 from pydub import AudioSegment
-from pytube import YouTube
-import os, sys, platform
+import os, sys, platform, io
 from pathlib import Path
 import redis
 from minio import Minio
@@ -38,8 +37,8 @@ def log_info(message, key=infoKey):
     redisClient.lpush('logging', f"{infoKey}:{message}")
 
 # Function
-def segmentAudio(url_link, request_id):
-    print('in AudioSegmenting')
+def segmentAudio(request_id):
+    log_info('in AudioSegmenting')
     # pydub does things in milliseconds
     segmented_tracks = []
 
@@ -59,7 +58,7 @@ def segmentAudio(url_link, request_id):
         minioClient.make_bucket(request_id)
     
     videofile_len = len(mp4_song)
-    print('videofile_len :: '+ str(videofile_len))
+    log_info('videofile_len :: '+ str(videofile_len))
     for i in range(0,videofile_len,fifty_seconds):
         if i+fifty_seconds < videofile_len:
             segment = mp4_song[i:i+fifty_seconds]
@@ -67,18 +66,19 @@ def segmentAudio(url_link, request_id):
             segment = mp4_song[i:videofile_len]
         if len(segment) > 0 :
             # Distributed
-            minioClient.put_object(request_id, str(f"{i}:{i+len(segment)}"))
+            minioClient.put_object(request_id, str(f"{i}:{i+len(segment)}"), io.BytesIO(segment.raw_data), len(segment.raw_data))
             redisClient.lpush("to-recognizer", f"{request_id}:{i}:{i+len(segment)}")
             # Local
             segment.export(out_f=destination+request_id+'/'+'segment'+str(i)+'.mp4',format='mp4')
             segmented_tracks.append('segment'+str(i)+'.mp4') 
-        
+    
+    log_info(f"Finished segmenting for job {request_id}")
     return segmented_tracks
 
 # Watch for jobs
 while True:
     try:
-        request_id = redisClient.blpop("to-segmenter", timeout = 0)
+        request_id = redisClient.blpop("to-segmenter", timeout = 0)[1].decode()
         log_info(f"Found job {request_id}")
         segmentAudio(request_id)
     except Exception as exp:

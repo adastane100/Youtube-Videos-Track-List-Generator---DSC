@@ -17,9 +17,12 @@ spec:
         image: kaidrumm/recognition:latest
         imagePullPolicy: Always
         resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
           requests:
             cpu: 100m
-            memory: 4Gi
+            memory: 100Mi
         env:
         - name: REDIS_HOST
           value: "redis"
