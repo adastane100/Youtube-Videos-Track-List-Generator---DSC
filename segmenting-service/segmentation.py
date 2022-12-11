@@ -51,8 +51,11 @@ def segmentAudio(request_id):
     except Exception as exp:
         log_debug(f"Exception raised downloading from Minio: {str(exp)}")
 
-    mp4_song = AudioSegment.from_file(fullAudioName, "mp4")
-    log_info(f"Created music file {mp4_song} with pydub")
+    try:
+        mp4_song = AudioSegment.from_file(fullAudioName, "mp4")
+        log_info(f"Created music file {mp4_song} with pydub")
+    except Exception as exp:
+        log_debug(f"Exception raised in AudioSegment: {str(exp)}")
 
     # Create segmentations folder on disk
     # seg_path = Path(destination+request_id+'/')
@@ -84,16 +87,20 @@ def segmentAudio(request_id):
                 log_info(f"Stored segment {i}:{i+len(segment)} in minio")
             except Exception as exp:
                 log_debug(f"Exception raised putting object in Minio: {str(exp)}")
-            redisClient.lpush("to-recognizer", f"{request_id}:{i}:{i+len(segment)}")
+            redisClient.rpush("to-recognizer", f"{request_id}:{i}:{i+len(segment)}")
             log_info(f"Sent job to Redis")
             # Local
             #segment.export(out_f=destination+request_id+'/'+'segment'+str(i)+'.mp4',format='mp4')
             #segmented_tracks.append('segment'+str(i)+'.mp4') 
     
     log_info(f"Finished segmenting for job {request_id}")
-    minioClient.remove_object("mp4files", request_id)
-    log_info(f"Removed original mp4 from Minio")
-    #return segmented_tracks
+    redisClient.rpush('to-recognizer', f"{request_id}:done:")
+    try:
+        minioClient.remove_object("mp4files", request_id)
+        log_info(f"Removed original mp4 from Minio")
+    except Exception as exp:
+        log_debug(f"Exception raised deleting mp4file: {str(exp)}")
+
 
 # Watch for jobs
 while True:

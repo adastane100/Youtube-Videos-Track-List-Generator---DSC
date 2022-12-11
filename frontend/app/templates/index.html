@@ -15,7 +15,7 @@
 			<div class="row">
 			<div class="col-md-2"></div>
 			<div class="col-md-8">
-				<form class="form-horizontal" action={{ url_for('generate_tracks') }} method="post">
+				<form class="form-horizontal" action={{ url_for('generate_request') }} method="post">
 					<div class="form-group">
 						<label class="control-label col-xs-4" for="url_link">Enter Youtube URL :</label>
 						<div class="col-md-8">
@@ -45,14 +45,14 @@
 								<tr style="color: green; ">    
 								<td>Nos.</td>
 								<td>Title</td>
-								<td>Sub Title</td>
+								<td>Album/Artist</td>
 						</tr>
 							</th>	  
 						{%for i in range(0, len)%}
 						<tr>
 							<td>{{i+1}}</td>
 							<td>{{tracks[i]['title']}}</td>
-							<td>{{tracks[i]['Sub title']}}</td> 
+							<td>{{tracks[i]['subtitle']}}</td> 
 						{%endfor%}  
 						</tr> 
 						</table>

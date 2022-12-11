@@ -5,6 +5,7 @@ https://github.com/dotX12/ShazamIO
 '''
 
 import os, sys, platform
+import jsonpickle
 from ShazamAPI import Shazam
 import redis
 from minio import Minio
@@ -78,17 +79,30 @@ def identify_track(request_id, segment_start, segment_end):
             log_info("First match has no subtitle")
         song_info['title'] = first_match['track']['title']
         #song_info['Track ID'] = one_record[1]['track']['key']
-        song_info['Sub title'] = first_match['track']['subtitle']
+        song_info['subtitle'] = first_match['track']['subtitle']
         log_info(f"Found record match: {song_info}")
     except Exception as exp:
         log_debug(f"Exception raised interacting with Shazam: {str(exp)}")
     
-    segment.close()
-    os.remove(f"tmp/{segment_start}:{segment_end}")
-    log_info("Removed segment from local storage")
+    # segment.close()
+    try:
+        os.remove(f"tmp/{segment_start}:{segment_end}")
+        log_info("Removed segment from local storage")
+    except Exception as exp:
+        log_debug(f"Exception raised deleting local file: {str(exp)}")
 
     #TODO: Print songs to Redis
+    if(song_info["title"]):
+        redisClient.rpush(request_id, jsonpickle.encode(song_info))
+        log_info("Reported song info to Redis")
     #Frontend can provide request_id and encourage user to refresh the page
+
+def signal_end(request_id):
+    try:
+        minioClient.remove_bucket(request_id)
+    except Exception as exp:
+        log_debug(f"Exception raised deleting segments bucket: {str(exp)}")
+    redisClient.rpush(f"{request_id}-done", 1)
 
 # Watch for jobs
 while True:
@@ -96,7 +110,10 @@ while True:
         request = redisClient.blpop("to-recognizer", timeout = 0)[1].decode()
         [request_id, segment_start, segment_end] = request.split(":")
         log_info(f"Found job {request_id}, {segment_start}:{segment_end}")
-        identify_track(request_id, segment_start, segment_end)
+        if(segment_start == "done"):
+            signal_end(request_id)
+        else:
+            identify_track(request_id, segment_start, segment_end)
     except Exception as exp:
         log_debug(f"Exception raised in receive-job loop: {str(exp)}")
     sys.stdout.flush()

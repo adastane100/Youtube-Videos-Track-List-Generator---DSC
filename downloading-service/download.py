@@ -53,7 +53,7 @@ def downloadAudio(url_link, request_id):
     except Exception as e:
         log_debug(f"Exception interacting with minio: {str(e)}")
 
-    redisClient.lpush("to-segmenter", request_id)
+    redisClient.rpush("to-segmenter", request_id)
     log_info(f"Sent job to segmenter")
     return your_path.name
 
