@@ -1,4 +1,4 @@
-#pip install pytube ffmpeg pydub ShazamAPI shazamio playsound
+#!/usr/bin/env python3
 
 from pydub import AudioSegment
 import os, sys, platform, io
@@ -45,17 +45,25 @@ def segmentAudio(request_id):
     fullAudioName = source+request_id+'.mp4'
 
     # Move full audio from Minio to local disk
-    fullAudio = minioClient.fget_object("mp4files", request_id, fullAudioName)
+    try:
+        fullAudio = minioClient.fget_object("mp4files", request_id, fullAudioName)
+        log_info(f"Downloaded full mp4 from minio")
+    except Exception as exp:
+        log_debug(f"Exception raised downloading from Minio: {str(exp)}")
+
     mp4_song = AudioSegment.from_file(fullAudioName, "mp4")
+    log_info(f"Created music file {mp4_song} with pydub")
 
     # Create segmentations folder on disk
-    seg_path = Path(destination+request_id+'/')
-    if not os.path.exists(seg_path):
-        os.makedirs(seg_path)
+    # seg_path = Path(destination+request_id+'/')
+    # if not os.path.exists(seg_path):
+    #     os.makedirs(seg_path)
+    #     log_info(f"Created local storage for audio segments")
 
     # Create segmentations folder on Minio
     if not minioClient.bucket_exists(request_id):
         minioClient.make_bucket(request_id)
+        log_info(f"Created minio bucket {request_id} for audio segments")
     
     videofile_len = len(mp4_song)
     log_info('videofile_len :: '+ str(videofile_len))
@@ -65,15 +73,27 @@ def segmentAudio(request_id):
         else:
             segment = mp4_song[i:videofile_len]
         if len(segment) > 0 :
-            # Distributed
-            minioClient.put_object(request_id, str(f"{i}:{i+len(segment)}"), io.BytesIO(segment.raw_data), len(segment.raw_data))
+            filename = f"/tmp/{i}:{i+len(segment)}.mp4"
+            try:
+                segment.export(out_f=filename,format='mp4')
+            except Exception as exp:
+                log_debug(f"Exception raised storing segment locally: {str(exp)}")
+            try:
+                #minioClient.put_object(request_id, str(f"{i}:{i+len(segment)}"), io.BytesIO(segment.raw_data), len(segment.raw_data), content_type='application/mp4')
+                minioClient.fput_object(request_id, str(f"{i}:{i+len(segment)}"), filename, content_type='audio/mp4')
+                log_info(f"Stored segment {i}:{i+len(segment)} in minio")
+            except Exception as exp:
+                log_debug(f"Exception raised putting object in Minio: {str(exp)}")
             redisClient.lpush("to-recognizer", f"{request_id}:{i}:{i+len(segment)}")
+            log_info(f"Sent job to Redis")
             # Local
-            segment.export(out_f=destination+request_id+'/'+'segment'+str(i)+'.mp4',format='mp4')
-            segmented_tracks.append('segment'+str(i)+'.mp4') 
+            #segment.export(out_f=destination+request_id+'/'+'segment'+str(i)+'.mp4',format='mp4')
+            #segmented_tracks.append('segment'+str(i)+'.mp4') 
     
     log_info(f"Finished segmenting for job {request_id}")
-    return segmented_tracks
+    minioClient.remove_object("mp4files", request_id)
+    log_info(f"Removed original mp4 from Minio")
+    #return segmented_tracks
 
 # Watch for jobs
 while True:

@@ -49,10 +49,12 @@ def downloadAudio(url_link, request_id):
     '''
     try:
         minioClient.fput_object("mp4files", request_id, your_path)
+        log_info(f"Stored full mp4 file for {request_id} in minio")
     except Exception as e:
         log_debug(f"Exception interacting with minio: {str(e)}")
 
     redisClient.lpush("to-segmenter", request_id)
+    log_info(f"Sent job to segmenter")
     return your_path.name
 
 if not minioClient.bucket_exists("mp4files"):

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-## https://github.com/dotX12/ShazamIO
+
+'''
+https://github.com/dotX12/ShazamIO
+'''
 
 import os, sys, platform
 from ShazamAPI import Shazam
@@ -33,38 +36,67 @@ def log_info(message, key=infoKey):
     redisClient.lpush('logging', f"{infoKey}:{message}")
 
 def identify_track(request_id, segment_start, segment_end):
+    log_info(f"Identify track for {request_id}, {segment_start}:{segment_end}")
+    
     song_info = {}
 
     # Open segment 
-    segmentAudio = minioClient.get_object(request_id, f"{segment_start}:{segment_end}")
+    try:
+        #log_info("trying")
+        response = minioClient.fget_object(request_id, f"{segment_start}:{segment_end}", f"tmp/{segment_start}:{segment_end}")
+        #response = minioClient.get_object(request_id, f"{segment_start}:{segment_end}")
+        #log_info(f"Minio response: {response}")
+        log_info(f"Downloaded from minio to local file")
+        minioClient.remove_object(request_id, f"{segment_start}:{segment_end}")
+        log_info(f"Deleted segment from minio")
+    except Exception as exp:
+        log_debug(f"Exception raised downloading from Minio: {str(exp)}")
+    # finally:
+    #     response.close()
+    #     response.release_conn()
+    
+    try:
+        segment = open(f"tmp/{segment_start}:{segment_end}", 'rb').read()
+        log_info(f"Opened segment file for {segment_start} to {segment_end}")  
+    except Exception as exp:
+        log_debug(f"Exception raised opening segment from local: {str(exp)}")
 
     try:
-        #mp3_file_content_to_recognize = open(destination+video_title+'/'+track, 'rb').read()
-        shazam = Shazam(segmentAudio)
+        log_info(f"Opening new Shazam object") 
+
+        shazam = Shazam(segment)
         recognize_generator = shazam.recognizeSong()
-        while True:
-            one_record = next(recognize_generator)
-            break
-        
-        song_info['title'] = one_record[1]['track']['title']
-        song_info['Track ID'] = one_record[1]['track']['key']
-        song_info['Sub title'] = one_record[1]['track']['subtitle']
-    except:
-        song_info = {}
-    return song_info
+        #while True:
+        first_match = next(recognize_generator)[1]
+        log_info(f"Found one record")
+        #break
+        if(not first_match['track']):
+            log_info("First match has no track info")
+        if(not first_match['track']['title']):
+            log_info("First match has no title")
+        if(not first_match['track']['subtitle']):
+            log_info("First match has no subtitle")
+        song_info['title'] = first_match['track']['title']
+        #song_info['Track ID'] = one_record[1]['track']['key']
+        song_info['Sub title'] = first_match['track']['subtitle']
+        log_info(f"Found record match: {song_info}")
+    except Exception as exp:
+        log_debug(f"Exception raised interacting with Shazam: {str(exp)}")
+    
+    segment.close()
+    os.remove(f"tmp/{segment_start}:{segment_end}")
+    log_info("Removed segment from local storage")
 
-
-def recognizeSongs():
-    segment = redisClient.blpop("to-recognizer", timeout=0)
-    [request_id, segment_start, segment_end] = segment.split(":")
-    identify_track(request_id, segment_start, segment_end)
+    #TODO: Print songs to Redis
+    #Frontend can provide request_id and encourage user to refresh the page
 
 # Watch for jobs
 while True:
     try:
-        request_id = redisClient.blpop("to-recognizer", timeout = 0)
-        log_info(f"Found job {request_id}")
-        recognizeSongs(request_id)
+        request = redisClient.blpop("to-recognizer", timeout = 0)[1].decode()
+        [request_id, segment_start, segment_end] = request.split(":")
+        log_info(f"Found job {request_id}, {segment_start}:{segment_end}")
+        identify_track(request_id, segment_start, segment_end)
     except Exception as exp:
         log_debug(f"Exception raised in receive-job loop: {str(exp)}")
     sys.stdout.flush()
