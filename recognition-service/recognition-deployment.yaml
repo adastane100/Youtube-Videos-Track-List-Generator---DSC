@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: recognition-worker
-  replicas: 1
+  replicas: 5
   template:
     metadata:
       labels:

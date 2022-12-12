@@ -42,11 +42,6 @@ def downloadAudio(url_link, request_id):
     log_info(f'All audioStreams: {yt.streams.filter(only_audio=True)}')
     out_file = audioStream.download(output_path=destination)
     your_path = Path(out_file)
-    '''
-    base, ext = os.path.splitext(out_file)
-    new_file = base + '.mp4'
-    os.rename(out_file, new_file)
-    '''
     try:
         minioClient.fput_object("mp4files", request_id, your_path)
         log_info(f"Stored full mp4 file for {request_id} in minio")
@@ -64,10 +59,11 @@ if not minioClient.bucket_exists("mp4files"):
 while True:
     try:
         job = redisClient.blpop("to-downloader", timeout = 0)[1]
-        log_info(f"Found job {job}")
         [request_id, url] = job.decode().split(':', 1)
         log_info(f"Request ID: {request_id}, url: {url}")
         downloadAudio(url, request_id)
+        redisClient.set(f'{request_id}-status', "segmenting")
+        redisClient.rpush("check-uniqueness", request_id)
     except Exception as exp:
         log_debug(f"Exception raised in receive-job loop: {str(exp)}")
     sys.stdout.flush()

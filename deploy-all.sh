@@ -5,6 +5,7 @@ kubectl apply -f frontend/frontend-service.yaml
 kubectl apply -f downloading-service/downloading-deployment.yaml
 kubectl apply -f recognition-service/recognition-deployment.yaml
 kubectl apply -f segmenting-service/segmentation-deployment.yaml
+kubectl apply -f uniqueness-service/uniqueness-deployment.yaml
 
 kubectl apply -f redis/redis-deployment.yaml
 kubectl apply -f redis/redis-service.yaml

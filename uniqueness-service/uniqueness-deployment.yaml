@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: segmentation-worker
+  name: uniqueness-worker
 spec:
   selector:
     matchLabels:
-      app: segmentation-worker
-  replicas: 3
+      app: uniqueness-worker
+  replicas: 1
   template:
     metadata:
       labels:
-        app: segmentation-worker
+        app: uniqueness-worker
     spec:
       containers:
-      - name: segmentation-worker
-        image: kaidrumm/segmentation:latest
+      - name: uniqueness-worker
+        image: kaidrumm/uniqueness:latest
         imagePullPolicy: Always
         resources:
           limits:
             cpu: 200m
-            memory: 2Gi
+            memory: 200Mi
           requests:
             cpu: 100m
-            memory: 1Gi
+            memory: 100Mi
         env:
         - name: REDIS_HOST
           value: "redis"
