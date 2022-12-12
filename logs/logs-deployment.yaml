@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: logs
-        image: kaidrumm/demucs-logs:latest
+        image: kaidrumm/logs:latest
         imagePullPolicy: Always
         resources:
           limits:

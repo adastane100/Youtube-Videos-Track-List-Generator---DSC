@@ -22,15 +22,15 @@ minioClient = Minio(minioHost,
                secret_key=minioPasswd)
 
 # Logging
-infoKey = "{}.rest.info".format(platform.node())
-debugKey = "{}.rest.debug".format(platform.node())
-def log_debug(message, key=debugKey):
+infoKey = "{}.info".format(platform.node())
+debugKey = "{}.debug".format(platform.node())
+def log_debug(message, key=''):
     print("DEBUG:", message, file=sys.stdout)
-    redisClient.lpush('logging', f"{debugKey}:{message}")
+    redisClient.lpush('logging', f"{debugKey:50}:{key}:{message}")
 
-def log_info(message, key=infoKey):
+def log_info(message, key=''):
     print("INFO:", message, file=sys.stdout)
-    redisClient.lpush('logging', f"{infoKey}:{message}")
+    redisClient.lpush('logging', f"{infoKey:50}:{key}:{message}")
 
 
 source = 'mp4files/'
@@ -39,34 +39,34 @@ fifty_seconds = 50 * 1000
 
 # Segmenting
 def segmentAudio(request_id):
-    log_info('in AudioSegmenting')
+    log_info(f'Segmenting request', key=request_id)
     fullAudioName = source + request_id + '.mp4'
 
     # Move full audio from Minio to local disk
     try:
         minioClient.fget_object("mp4files", request_id, fullAudioName)
-        log_info(f"Downloaded full mp4 from minio")
+        #log_info(f"Downloaded full mp4 from minio")
     except Exception as exp:
-        log_debug(f"Exception raised downloading from Minio: {str(exp)}")
+        log_debug(f"Exception raised downloading from Minio: {str(exp)}", key=request_id)
 
     # Load audio object from file
     try:
         mp4_song = AudioSegment.from_file(fullAudioName, "mp4")
-        log_info(f"Created music file {mp4_song} with pydub")
+        #log_info(f"Created music file {mp4_song} with pydub")
     except Exception as exp:
-        log_debug(f"Exception raised in AudioSegment: {str(exp)}")
+        log_debug(f"Exception raised in AudioSegment: {str(exp)}", key=request_id)
 
     # Create segmentation bucket in Minio
     try:
         if not minioClient.bucket_exists(request_id):
             minioClient.make_bucket(request_id)
-            log_info(f"Created minio bucket {request_id} for audio segments")
+            #log_info(f"Created minio bucket {request_id} for audio segments")
     except Exception as exp:
-        log_debug(f"Exception raised creating Minio bucket: {str(exp)}")
+        log_debug(f"Exception raised creating Minio bucket: {str(exp)}", key=request_id)
 
     # Process segments
     videofile_len = len(mp4_song)
-    log_info('videofile_len :: '+ str(videofile_len))
+    log_info('videofile_len :: '+ str(videofile_len), key=request_id)
     for i in range(0, videofile_len, fifty_seconds):
         if i+fifty_seconds < videofile_len:
             segment = mp4_song[i:i+fifty_seconds]
@@ -78,21 +78,21 @@ def segmentAudio(request_id):
             try:
                 segment.export(out_f=segmentName, format='mp4')
             except Exception as exp:
-                log_debug(f"Exception raised storing segment locally: {str(exp)}")
+                log_debug(f"Exception raised storing segment locally: {str(exp)}", key=request_id)
             # Transfer to Minio
             try:
                 minioClient.fput_object(request_id, str(f"{i}:{i+len(segment)}"), segmentName, content_type='audio/mp4')
-                log_info(f"Stored segment {i}:{i+len(segment)} in minio")
+                #log_info(f"Stored segment {i}:{i+len(segment)} in minio")
             except Exception as exp:
-                log_debug(f"Exception raised putting object in Minio: {str(exp)}")
+                log_debug(f"Exception raised putting object in Minio: {str(exp)}", key=request_id)
             # Send job to recognizer 
             redisClient.rpush("to-recognizer", f"{request_id}:{i}:{i+len(segment)}")
-            log_info(f"Sent job to Redis")
+            #log_info(f"Sent job to Redis")
             # Delete from local disk
             try:
                 os.remove(segmentName)
             except Exception as exp:
-                log_debug(f"Exception raised deleting segment: {str(exp)}")
+                log_debug(f"Exception raised deleting segment: {str(exp)}", key=request_id)
     
     # Finish and clean up
     log_info(f"Finished segmenting for job {request_id}")
@@ -100,23 +100,23 @@ def segmentAudio(request_id):
     redisClient.rpush('to-recognizer', f"{request_id}:done:")
     try:
         os.remove(fullAudioName)
-        log_info(f"Removed mp4 from local storage")
+        #log_info(f"Removed mp4 from local storage")
     except Exception as exp:
-        log_debug(f"Exception raised deleting mp4file: {str(exp)}")
+        log_debug(f"Exception raised deleting mp4file: {str(exp)}", key=request_id)
     try:
         minioClient.remove_object("mp4files", request_id)
-        log_info(f"Removed original mp4 from Minio")
+        #log_info(f"Removed original mp4 from Minio")
     except Exception as exp:
-        log_debug(f"Exception raised deleting mp4file from Minio: {str(exp)}")
+        log_debug(f"Exception raised deleting mp4file from Minio: {str(exp)}", key=request_id)
 
 
 # Watch for jobs
 while True:
     try:
         request_id = redisClient.blpop("to-segmenter", timeout = 0)[1].decode()
-        log_info(f"Found job {request_id}")
+        log_info(f"Starting segmenter", key=request_id)
         segmentAudio(request_id)
     except Exception as exp:
-        log_debug(f"Exception raised in receive-job loop: {str(exp)}")
+        log_debug(f"Exception raised in receive-job loop: {str(exp)}", key=request_id)
     sys.stdout.flush()
     sys.stderr.flush()

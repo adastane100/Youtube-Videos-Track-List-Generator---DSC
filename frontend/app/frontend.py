@@ -20,14 +20,14 @@ redisPort = os.getenv("REDIS_PORT") or 6379
 redisClient = Redis(host=redisHost, port=redisPort, db=0)
 
 # Logging
-infoKey = "{}.rest.info".format(platform.node())
-debugKey = "{}.rest.debug".format(platform.node())
-def log_debug(message, key=debugKey):
+infoKey = "{}.info".format(platform.node())
+debugKey = "{}.debug".format(platform.node())
+def log_debug(message, key=''):
     print("DEBUG:", message, file=sys.stdout)
-    redisClient.lpush('logging', f"{key}:{message}")
-def log_info(message, key=debugKey):
+    redisClient.lpush('logging', f"{infoKey:50}:{key}:{message}")
+def log_info(message, key=''):
     print("INFO:", message, file=sys.stdout)
-    redisClient.lpush('logging', f"{key}:{message}")
+    redisClient.lpush('logging', f"{debugKey:50}:{key}:{message}")
 
 # Minio
 minioHost = os.getenv("MINIO_HOST") or "localhost:9000"
@@ -58,35 +58,22 @@ def generate_request():
     input_link = request.form.get("url_link")
     input_val = input_link.strip()
     request_id = str(uuid.uuid4().hex)
-    log_info(f"Request ID: {request_id}, Input: {input_val}")
+    log_info(f"Input: {input_val}", key=request_id)
     redisClient.rpush('to-downloader', f"{request_id}:{input_val}")
     redisClient.set(f'{request_id}-status', "downloading")
-    session['tracks'] = []
+    session[request_id] = []
     #return redirect(url_for("check_status", id=request_id))
     return redirect(url_for("track_list", id=request_id))
-
-# @app.route('/check_status', methods=['GET'])
-# def check_status():
-#     request_id = request.args['id']
-#     log_info(f"Status check for {request_id}")
-#     try:
-#         status = redisClient.get(f"{request_id}-status").decode()
-#     except Exception as exp:
-#         log_debug(f"Request is not done: {str(exp)}")
-#     if status == "done":
-#         return redirect(url_for("track_list", id=request_id))
-#     else:
-#         return jsonify({"request_id": request_id, "request_status": status})
 
 @app.route('/track_list', methods=['GET'])
 def track_list():
     request_id = request.args['id']
-    identified_tracks = session['tracks']
+    identified_tracks = session[request_id]
     status = ''
     try:
         status = redisClient.get(f"{request_id}-status").decode()
     except Exception as exp:
-        log_debug(f"Error getting request status: {str(exp)}")
+        log_debug(f"Error getting request status: {str(exp)}", key=request_id)
 
     raw_pop = redisClient.lpop(f"{request_id}-filtered")
     if not raw_pop:
@@ -95,7 +82,7 @@ def track_list():
         result = raw_pop.decode()
     while(result):
         result_unpickled = jsonpickle.decode(result)
-        log_info(f"Result popped from redis: {result_unpickled}")
+        log_info(f"Result popped from redis: {result_unpickled}", key=request_id)
         identified_tracks.append(result_unpickled)
         bytes = redisClient.lpop(f"{request_id}-filtered")
         if (bytes):
@@ -103,11 +90,11 @@ def track_list():
         else:
             break
 
-    log_info(f"Multipop loop done. Identified tracks: {identified_tracks}")
-    session['tracks'] = identified_tracks        
+    log_info(f"Multipop loop done. Identified tracks: {identified_tracks}", key=request_id)
+    session[request_id] = identified_tracks        
         
     if identified_tracks is not None and len(identified_tracks) > 0:
-        log_info("Tracks found")
+        log_info("Tracks found", key=request_id)
         return render_template(
             'index.html',
             tracks=identified_tracks,
@@ -116,7 +103,7 @@ def track_list():
             status=status
         )
     else:
-        log_info("No tracks found")
+        log_info("No tracks found", key=request_id)
         return render_template(
             'index.html',
             tracks='No tracks yet',
