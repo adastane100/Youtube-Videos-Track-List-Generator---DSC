@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: segmentation-worker
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -17,9 +17,12 @@ spec:
         image: kaidrumm/segmentation:latest
         imagePullPolicy: Always
         resources:
+          limits:
+            cpu: 200m
+            memory: 3Gi
           requests:
             cpu: 100m
-            memory: 4Gi
+            memory: 1Gi
         env:
         - name: REDIS_HOST
           value: "redis"

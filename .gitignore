@@ -1,5 +1,5 @@
 project-venv/*
 __pycache__/*
-segmentedTracks/*
-mp4Files/*
-
+**/segmentedTracks/**
+**/mp4Files/**
+**/tmp/**

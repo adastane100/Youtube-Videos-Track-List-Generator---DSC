@@ -1,20 +1,20 @@
-apiVersion: apps/v1
+apiVersion: apps/v1 #  for k8s versions before 1.9.0 use apps/v1beta2  and before 1.8.0 use extensions/v1beta1
 kind: Deployment
 metadata:
-  name: frontend
+  name: logs
 spec:
   selector:
     matchLabels:
-      app: frontend
+      app: logs
   replicas: 1
   template:
     metadata:
       labels:
-        app: frontend
+        app: logs
     spec:
       containers:
-      - name: frontend
-        image: kaidrumm/frontend:latest
+      - name: logs
+        image: kaidrumm/logs:latest
         imagePullPolicy: Always
         resources:
           limits:
@@ -28,7 +28,3 @@ spec:
           value: "redis"
         - name: REDIS_PORT
           value: "6379"
-        - name: MINIO_HOST
-          value: "minio:9000"
-        ports:
-        - containerPort: 5000

@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: uniqueness-worker
 spec:
   selector:
     matchLabels:
-      app: frontend
+      app: uniqueness-worker
   replicas: 1
   template:
     metadata:
       labels:
-        app: frontend
+        app: uniqueness-worker
     spec:
       containers:
-      - name: frontend
-        image: kaidrumm/frontend:latest
+      - name: uniqueness-worker
+        image: kaidrumm/uniqueness:latest
         imagePullPolicy: Always
         resources:
           limits:
@@ -31,4 +31,4 @@ spec:
         - name: MINIO_HOST
           value: "minio:9000"
         ports:
-        - containerPort: 5000
+        - containerPort: 5003

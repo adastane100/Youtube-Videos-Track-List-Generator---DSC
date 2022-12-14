@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: downloading-worker
 spec:
   selector:
     matchLabels:
-      app: frontend
+      app: downloading-worker
   replicas: 1
   template:
     metadata:
       labels:
-        app: frontend
+        app: downloading-worker
     spec:
       containers:
-      - name: frontend
-        image: kaidrumm/frontend:latest
+      - name: downloading-worker
+        image: kaidrumm/download:latest
         imagePullPolicy: Always
         resources:
           limits:
@@ -31,4 +31,4 @@ spec:
         - name: MINIO_HOST
           value: "minio:9000"
         ports:
-        - containerPort: 5000
+        - containerPort: 5002

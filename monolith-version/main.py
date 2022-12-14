@@ -1,16 +1,10 @@
-#python -m pip install redis==3.5.3
-#sudo apt update
-#sudo apt install ffmpeg
-#sudo apt-get install redis-server
-#sudo service redis-server start
-
 from flask import Flask, render_template, request
 from ShazamAPI import Shazam
 import redis
 import json
 import asyncio
-
 import DownloadFromYoutube ,AudioSegmenting, RecognizeTrack, RelatedTracks
+
 
 #creating flask instance
 app = Flask(__name__) 
