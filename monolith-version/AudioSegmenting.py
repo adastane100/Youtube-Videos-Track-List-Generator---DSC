@@ -1,4 +1,5 @@
 ##https://github.com/jiaaro/pydub
+# pip install Shazamio ShazamAPI flask pydub pathlib pytube ffmpeg
 
 from pydub import AudioSegment
 import os
@@ -22,7 +23,9 @@ def segmentAudio(video_title):
     
     videofile_len = len(mp4_song)
     print('videofile_len :: '+ str(videofile_len))
+
     for i in range(0,videofile_len,fifty_seconds):
+        
         if i+fifty_seconds < videofile_len:
             segment = mp4_song[i:i+fifty_seconds]
         else:
